@@ -28,7 +28,7 @@ pipeline {
             }
         }
         
-tage('Deploy deployment and service file') {
+stage('Deploy deployment and service file') {
     steps {
         script {
             withCredentials([file(credentialsId: 'kuber', variable: 'KUBECONFIG')]) {
