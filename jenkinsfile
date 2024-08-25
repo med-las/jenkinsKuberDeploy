@@ -2,22 +2,37 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Checkout GitHub repo') {
             steps {
-                // Commands to build your project
-                echo 'Building...'
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/med-las/jenkinsKuberDeploy']])
             }
         }
-        stage('Test') {
+        
+        stage('Build and Tag Docker Image') {
             steps {
-                // Commands to test your project
-                echo 'Testing...'
+                script {
+                    sh 'docker build . -t hellodocker'
+                    sh 'docker tag hellodocker medlas/hellodocker'
+                }
             }
         }
-        stage('Deploy') {
+        
+        stage('Push the Docker Image to DockerHUb') {
             steps {
-                // Commands to deploy your project
-                echo 'Deploying...'
+                script {
+                    withCredentials([string(credentialsId: 'docker_hub', variable: 'docker_hub')]) {
+                    sh 'docker login -u medlas -p ${docker_hub}'
+}
+                    sh 'docker push medlas/hellodocker'
+                }
+            }
+        }
+        
+        stage('Deploy deployment and service file') {
+            steps {
+                script {
+                    kubernetesDeploy configs: 'deploymentsvc.yaml', kubeconfigId: 'kubernetes_config'
+                }
             }
         }
     }
