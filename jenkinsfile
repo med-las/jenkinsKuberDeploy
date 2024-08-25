@@ -31,7 +31,7 @@ pipeline {
 stage('Deploy deployment and service file') {
     steps {
         script {
-            withCredentials([file(credentialsId: 'kuber', variable: 'KUBECONFIG')]) {
+            withCredentials([file(credentialsId: 'kuber1', variable: 'KUBECONFIG')]) {
                 sh 'kubectl apply -f deploymentsvc.yaml'
             }
         }
