@@ -1,11 +1,13 @@
 pipeline {
     agent any
+
     stages {
         stage('Checkout GitHub repo') {
             steps {
-                checkout scm
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/med-las/jenkinsKuberDeploy']])
             }
         }
+        
         stage('Build and Tag Docker Image') {
             steps {
                 script {
@@ -14,21 +16,22 @@ pipeline {
                 }
             }
         }
-        stage('Push Docker Image to DockerHub') {
+        
+        stage('Push the Docker Image to DockerHUb') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                script {
+                    withCredentials([string(credentialsId: 'docker', variable: 'docker_hub')]) {
+                    sh 'docker login -u medlas -p ${docker_hub}'
+}
                     sh 'docker push medlas/hellodocker'
                 }
             }
         }
-        stage('Deploy to Kubernetes') {
+        
+        stage('Deploy deployment and service file') {
             steps {
-                withCredentials([file(credentialsId: 'kuber', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        export KUBECONFIG=$KUBECONFIG
-                        kubectl apply -f kubernetes/deployment.yaml
-                    '''
+                script {
+                    kubernetesDeploy configs: 'deploymentsvc.yaml', kubeconfigId: 'kuber'
                 }
             }
         }
